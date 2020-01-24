@@ -116,9 +116,18 @@ address=[
 });
 
 app.delete('/address/:addressId', (req, res) => {
-  const { userId } = req.params;
-  console.log(userId);
-  res.send('Got it.');
+  const { addressId } = req.params;
+  console.log(addressId);
+
+  const index = address.findIndex(u => u.id === addressId);
+
+  if(index === -1){
+    return res.status(404).send('User not found');
+  }
+
+  address.splice(index, 1)
+
+  res.staus(204).end();
 });
 
 module.exports = app
