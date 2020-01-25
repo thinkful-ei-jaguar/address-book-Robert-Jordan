@@ -3,7 +3,7 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
-const { NODE_ENV,Token } = require('./config')
+const { NODE_ENV, Token } = require('./config')
 const app = express();
 const uuid = require('uuid/v4');
 app.use(express.json());
@@ -16,16 +16,15 @@ app.use(morgan(morganOption));
 app.use(cors());
 app.use(helmet());
 
-/*function validateBearerToken(req, res, next) {
+function validateBearerToken(req, res, next) {
   const authToken = req.get('Authorization')
-  //console.log(authToken);
+  console.log(authToken, Token, authToken.split(' ')[1]);
   if (!authToken || authToken.split(' ')[1] !== Token) {
     return res.status(401).json({ error: 'Unauthorized request' })
   }
-  next()
-}*/
-
-
+  // console.log('Object entries', Object.entries(req));
+  return next()
+}
 
 app.use(function errorHandler(error, req, res, next) {
    let response
@@ -37,11 +36,6 @@ app.use(function errorHandler(error, req, res, next) {
    }
    res.status(500).json(response)
  })
-
-
-
-
-
 
 address=[
   {
@@ -75,18 +69,15 @@ address=[
   },
 ]
 
-
-
- app.get('/address', (req, res) => {
+app.get('/address', (req, res) => {
   res.json(address);
 })
 
-//,validateBearerToken
- app.post('/address', (req, res) => {
+function handlePostAddress (req, res) {
   const id = uuid();
   console.log(req.body);
-  const {firstName,lastName, address1 , address2, city,state, zip} = req.body;
-  //res.send(req.body);
+  const { firstName, lastName, address1 , address2='', city, state, zip } = req.body;
+
   if(!firstName){
     return res.status(400).send("First name required")
   }
@@ -108,25 +99,27 @@ address=[
   if(!zip){
     return res.status(400).send("zip required")
   }
-  if(zip < 10000 && zip >99999){
+  if(zip < 10000 && zip > 99999){
     return res.status(400).send("zip need to be 5 digits")
   }
   const newObj={
     ...req.body,
     id
   }
+
   address.push(newObj);
+
   res
   .status(201)
-  .location(`http://localhost:8000/address/${id}`)
-  .json(newObj);
+  .location(`http://localhost:8081/address/${id}`)
+  .json(newObj)
+  .end();
 
-  res.send("added the newobj");
-});
+};
 
-//,validateBearerToken
+app.post('/address', validateBearerToken, handlePostAddress);
 
-app.delete('/address/:addressId', (req, res) => {
+app.delete('/address/:addressId', validateBearerToken, (req, res) => {
   const { addressId } = req.params;
   console.log(addressId);
 
@@ -138,7 +131,7 @@ app.delete('/address/:addressId', (req, res) => {
 
   address.splice(index, 1)
 
-  res.staus(204).end();
+  res.status(204).end();
 });
 
 module.exports = app
